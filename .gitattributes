@@ -1,2 +1,4 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# Change override so it can highlight Guava files
+*.guava linguist-language=sql
