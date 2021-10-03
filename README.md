@@ -1,4 +1,6 @@
-# Guayaba Script
+# Guava Script
+
+![Guava Script logo](guayaba.png)
 
 Program like if you're doing a query - but not.
 
