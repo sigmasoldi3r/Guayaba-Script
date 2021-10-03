@@ -105,12 +105,35 @@ TypeName
     }) }
 
 FromExpr
-    = names:(n:Name nn:(_ FROM _ e:Name {return e})* {return [n, ...nn]})
-    { return L({ type: 'from', names }) }
+    = seg:(
+        n:(e:Name {return {e}})
+        nn:(_ v:(FROM / IN) _ e:Name {return {e, v}})*
+        {return [n, ...nn]}
+    )
+    { return L({
+        type: 'from',
+        segments: seg.map(({e, v}) => ({
+            name: e,
+            mode: v?.toLowerCase()
+        }))
+    }) }
 
 Name
-	= value:$([_A-Za-z?$~!*+-][_A-Za-z0-9?$~*+-]*)
+	= EscapedName
+    / PlainName
+    / DollarExpression
+
+EscapedName
+    = '`' value:$(!'`' .)* '`'
+    { return L({ type: 'name', escaped: true, value }) }
+
+PlainName
+    = value:$([_A-Za-z][_A-Za-z0-9]*)
     { return L({ type: 'name', value }) }
+
+DollarExpression
+    = '$' pos:$([0-9]+)
+    { return L({ type: 'dollar', value: Number(pos) }) }
 
 Literal
 	= StringLiteral
@@ -131,6 +154,7 @@ END = '#end'
 VALUE = 'value'i
 SELECT = 'select'i
 FROM = 'from'i
+IN = 'in'i
 AS = 'as'i
 INSERT = 'insert'i
 INTO = 'into'i

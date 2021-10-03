@@ -279,13 +279,13 @@ export default class Compiler {
    * Compiles the call type query.
    */
   compileCall(query: Call): string {
-    const macro = this.getMacro(query.target.names[0].value);
+    const macro = this.getMacro(query.target.segments[0].name.value);
     if (macro != null) {
       // Expand the macro if found.
       try {
         return macro.call(this, ...query.args);
       } catch (e) {
-        throw new CompilerException(`Macro "${query.target.names[0].value}" evaluation failed: ${e}`, query);
+        throw new CompilerException(`Macro "${query.target.segments[0].name.value}" evaluation failed: ${e}`, query);
       }
     }
     // generate a call if not.

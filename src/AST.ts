@@ -82,10 +82,14 @@ export interface Return extends QueryType<'RETURN'> {
 // Terminals
 export interface Name extends Node<'name'> {
   value: string;
+  escaped?: true;
 }
 
 export interface FromExpr extends Node<'from'> {
-  names: Name[];
+  segments: {
+    name: Name;
+    mode?: 'in' | 'from';
+  }[];
 }
 
 export interface TypeName extends Node<'typename'> {

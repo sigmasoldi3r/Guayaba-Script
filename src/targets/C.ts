@@ -20,15 +20,13 @@ import Compiler from '../Compiler';
  */
 export default class C extends CodeGenerator {
   fromExpr(node: FromExpr): string {
-    if (node.names.length === 1) {
-      return this.compiler.compile(node.names[0])
+    if (node.segments.length === 1) {
+      return this.compiler.compile(node.segments[0].name)
     }
-    node.names.reverse();
-    let last = this.compiler.getLocal(node.names[0].value, node.names[0]);
-    return node.names.slice(1).reduce((prev, curr, i) => {
-      const acc = last.type.pointer ? '->' : '.';
-      return `${prev}${acc}${this.translateSymbol(curr)}`;
-    }, last.alias);
+    return node.segments.reverse().reduce((result, node) => {
+      const acc = node.mode == null ? '' : node.mode === 'in' ? '->' : '.';
+      return `${result}${this.translateSymbol(node.name)}${acc}`
+    }, '')
   }
   rowDeclare(node: DeclareRow): string {
     const columns = node.types.map(
