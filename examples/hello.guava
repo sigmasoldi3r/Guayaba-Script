@@ -2,7 +2,9 @@
 
 -- Macro definition
 #macro square_sums
-(...args) => args.map(({ value }) => `${value} * ${value}`).join(' + ')
+(...args) => args
+  .filter(s => s != ' ' && s != ',')
+  .map(value => `${value} * ${value}`).join(' + ')
 #end
 
 -- Example of global variable

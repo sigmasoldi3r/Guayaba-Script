@@ -8,36 +8,45 @@
     }
     return names[from]
   }
+  const macros = {}
 }
 
 Script
   = __ Guayabo
    body:(_ e:(Query / Macro) {return e})*
   __
-  { return `// GENERATED C PROGRAM\n${body.map(e => `  ${e};\n`).join('')}` }
+  { return `// GENERATED C PROGRAM\n${body.filter(Boolean).map(e => `${e};\n`).join('')}` }
 
 Guayabo = p:Pragma _ "manoguayabo"
 
 Macro "Macro definition"
   = MACRO _ name:Name src:$(!END .)* END
-  { return 'macro stub' }
+  {
+    macros[name] = eval(src)
+    return null
+  }
 
 Pragma
   = PRAGMA
 
-Query "Query statement"
+Query
   = Value
   / Insert
   / Call
   / Function
   / Row
   / Return
+  / OpenMod
 
 Expr
   = '(' __ e:Query __ ')' { return e }
   / Literal
   / FromExpr
   
+
+OpenMod
+  = OPEN _ MODULE _ name:StringLiteral
+  { return `#include <${name.slice(1, -1)}>` }
 
 ExprList
   = '()' { return '' }
@@ -50,23 +59,31 @@ Value
 
 Insert
   = INSERT __ expr:Expr __ INTO _ target:FromExpr
-  { return 'mutation stub' }
+  { return `${target} = ${expr}` }
   
 Call
   = CALL _ target:FromExpr _ WITH __ args:ExprList
-  { return `${target}(${args})` }
+  {
+    if (target in macros) {
+      return macros[target](...args)
+    }
+    return `${target}(${args})`
+  }
   
 Function
   = DECLARE _ FUNCTION _ name:Name
   args:(_ WITH _ e:TypeList {return e})?
   rType:(_ RETURNS _ n:TypeName {return n})?
   _ THEN __ body:(Expr / '(' o:(_ q:Query {return q})* __')' {return o})
-  { return 'function stub' }
+  {
+    if (!(body instanceof Array)) { body = [body] }
+    return `${rType} ${name}() {\n${body?.map(e => `  ${e};\n`).join('')}}`
+  }
   
 Row
   = DECLARE _ ROW _ name:TypeName _ WITH
   __ '(' __ types:(t:TypeList __ {return t})?  ')'
-  { return `struct ${name} { ${types.map((t, i) => `${t} _${i};`).join('')} } typedef ${name}` }
+  { return `struct ${name} { ${types?.map((t, i) => `${t} _${i};`).join('')} } typedef ${name}` }
 
 Return
   = RETURN _ expr:Expr
@@ -75,11 +92,11 @@ Return
 // Terminals
 NameList
   = e:Name t:(__ ',' __ n:Name {return n})*
-  { return [e, ...t].join(', ') }
+  { return [e, ...t] }
 
 TypeList
   = e:TypeName t:(__ ',' __ n:TypeName {return n})*
-  { return [e, ...t].join(', ') }
+  { return [e, ...t] }
 
 TypeName
   = p:AT? name:Name
@@ -98,6 +115,11 @@ FromExpr
 Name
   = value:$([_A-Za-z][_A-Za-z0-9]*) { return value }
   / '`' value:$(!'`' .)* '`' { return normalize(value) }
+  / DollarExpr
+
+DollarExpr
+  = '$' val:$([0-9]+)
+  { return Number(val) }
 
 Literal
   = StringLiteral
@@ -130,6 +152,8 @@ FUNCTION = 'function'i
 ROW = 'row'i
 RETURNS = 'returns'i
 RETURN = 'return'i
+OPEN = 'open'i
+MODULE = 'module'i
 AT = '@'
 
 Comment "Comment"
