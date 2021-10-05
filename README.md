@@ -8,10 +8,12 @@ Program like if you're doing a query - but not.
 
 ```sql
 #pragma manoguayabo
+-- Imports
+OPEN "stdio.h"
 
 -- Macro definition
 #macro square_sums
-(...args) => args.map(({ value }) => `${value} * ${value}`).join(' + ')
+(...args) => args.map(value => `${value} * ${value}`).join(' + ')
 #end
 
 -- Example of global variable
@@ -33,9 +35,9 @@ VALUE test_row AS test_row_value
 -- Here @ denotes a pointer type.
 DECLARE FUNCTION init_test_row WITH @test_row
 THEN (
-  INSERT 0 INTO _0 FROM $1
-  INSERT 1.0 INTO _1 FROM $1
-  INSERT 100 INTO _2 FROM $1
+  INSERT 0 INTO _0 IN $1
+  INSERT 1.0 INTO _1 IN $1
+  INSERT 100 INTO _2 IN $1
 )
 
 -- Program entry point function
@@ -63,4 +65,39 @@ THEN (
   CALL print WITH "test(1, 2) = %i\n", (CALL test WITH 1, 2)
   RETURN 0
 )
+```
+
+## Basics
+
+Function invocation is done via `CALL {name} WITH {arguments...}`.
+
+If you happen to invoke a macro, it will be replaced by the expanded result of
+the macro, at compile time. You can see this in the arithmetic functions of
+`sum`, `sub`, `div`, `mul` which are all variadic, for example:
+
+```sql
+-- Example of macro expansion
+VALUE int AS x
+INSERT (CALL sum WITH 1, 2, 3, 4, 5) INTO x
+```
+
+This roughly expands to `x = 1 + 2 + 3 + 4 + 5`.
+
+Structure access is done via `FROM`, if value, or `IN` if pointer, example:
+
+```sql
+-- Here we have a pointer value
+VALUE @my_struct AS ptr
+CALL print WITH "ptr->x = %i\n", x IN ptr
+
+-- Here we have a structure value
+VALUE my_struct AS val
+CALL print WITH "val.x = %i\n", x FROM val
+```
+
+Pointer types are denoted by a `@` at the start of the name, for example:
+
+```sql
+-- This is like int* in C/C++
+VALUE @int AS ptr
 ```
