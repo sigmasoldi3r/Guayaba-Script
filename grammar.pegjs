@@ -8,7 +8,12 @@
     }
     return names[from]
   }
-  const macros = {}
+  const macros = {
+    sum: (...args) => args.join(' + '),
+    sub: (...args) => args.join(' - '),
+    div: (...args) => args.join(' / '),
+    mul: (...args) => args.join(' * '),
+  }
 }
 
 Script
@@ -45,13 +50,13 @@ Expr
   
 
 OpenMod
-  = OPEN _ MODULE _ name:StringLiteral
+  = OPEN _ name:StringLiteral
   { return `#include <${name.slice(1, -1)}>` }
 
 ExprList
   = '()' { return '' }
   / e:Expr t:(__ ',' __ x:Expr {return x})*
-  { return [e, ...t].join(', ') }
+  { return [e, ...t] }
 
 Value
   = VALUE _ target:TypeName _ AS _ names:NameList
@@ -67,7 +72,7 @@ Call
     if (target in macros) {
       return macros[target](...args)
     }
-    return `${target}(${args})`
+    return `${target}(${args.join(', ')})`
   }
   
 Function
@@ -77,13 +82,19 @@ Function
   _ THEN __ body:(Expr / '(' o:(_ q:Query {return q})* __')' {return o})
   {
     if (!(body instanceof Array)) { body = [body] }
-    return `${rType} ${name}() {\n${body?.map(e => `  ${e};\n`).join('')}}`
+    const ret = rType ?? 'void'
+    const arg = args?.map((s, i) => `${s} __arg${i+1}`).join(', ') ?? []
+    const bdy = body?.map(e => `  ${e};\n`).join('')
+    return `${ret} ${name}(${arg}) {\n${bdy}}`
   }
   
 Row
   = DECLARE _ ROW _ name:TypeName _ WITH
   __ '(' __ types:(t:TypeList __ {return t})?  ')'
-  { return `struct ${name} { ${types?.map((t, i) => `${t} _${i};`).join('')} } typedef ${name}` }
+  {
+    const def = types?.map((t, i) => `${t} _${i};`).join(' ')
+    return `struct ${name} { ${def} } typedef ${name}`
+  }
 
 Return
   = RETURN _ expr:Expr
@@ -107,9 +118,9 @@ TypeName
 FromExpr
   = head:Name
     tail:(_ op:(FROM / IN) _ name:Name {return {name, op} })*
-  { return tail.reduce((r, curr) => {
-    const op = curr.op == 'in' ? '->' : '.'
-    return `${r}${curr.name}${op}`
+  { return tail.reverse().reduce((r, curr) => {
+    const op = curr.op.toLowerCase() === 'in' ? '->' : '.'
+    return `${curr.name}${op}${r}`
   }, head) }
 
 Name
@@ -119,7 +130,7 @@ Name
 
 DollarExpr
   = '$' val:$([0-9]+)
-  { return Number(val) }
+  { return `__arg${val}` }
 
 Literal
   = StringLiteral

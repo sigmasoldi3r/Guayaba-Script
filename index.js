@@ -4,8 +4,11 @@
 const fs = require('fs')
 const parser = require('./parser')
 
-const src = fs.readFileSync('examples/hello.guava').toString()
+function compile(from, to) {
+  const src = fs.readFileSync(from).toString()
+  const out = parser.parse(src)
+  fs.writeFileSync(to, out)
+}
 
-const out = parser.parse(src)
-
-fs.writeFileSync('example.c', out)
+compile('examples/hello.guava', 'example.c')
+compile('examples/arduino_blink.guava', 'arduino_blink.c')

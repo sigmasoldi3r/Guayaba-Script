@@ -1,10 +1,10 @@
 #pragma manoguayabo
+-- Imports
+OPEN "stdio.h"
 
 -- Macro definition
 #macro square_sums
-(...args) => args
-  .filter(s => s != ' ' && s != ',')
-  .map(value => `${value} * ${value}`).join(' + ')
+(...args) => args.map(value => `${value} * ${value}`).join(' + ')
 #end
 
 -- Example of global variable
@@ -26,9 +26,9 @@ VALUE test_row AS test_row_value
 -- Here @ denotes a pointer type.
 DECLARE FUNCTION init_test_row WITH @test_row
 THEN (
-  INSERT 0 INTO _0 FROM $1
-  INSERT 1.0 INTO _1 FROM $1
-  INSERT 100 INTO _2 FROM $1
+  INSERT 0 INTO _0 IN $1
+  INSERT 1.0 INTO _1 IN $1
+  INSERT 100 INTO _2 IN $1
 )
 
 -- Program entry point function

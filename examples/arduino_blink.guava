@@ -1,0 +1,17 @@
+#pragma manoguayabo
+
+-- A cool example of a blinking arduino program
+OPEN "Arduino.h"
+
+DECLARE FUNCTION setup
+THEN (
+  CALL pinMode WITH LED_BUILTIN, OUTPUT
+)
+
+DECLARE FUNCTION loop
+THEN (
+  CALL digitalWrite WITH LED_BUILTIN, HIGH
+  CALL delay WITH 1000
+  CALL digitalWrite WITH LED_BUILTIN, LOW
+  CALL delay WITH 1000
+)
